@@ -8,7 +8,7 @@ import pprint
 import argparse
 from datetime import datetime
 from stat import *
-from os import listdir,stat
+from os import listdir,stat,remove
 from os.path import isfile,join,splitext,split,basename
 
 ### This python script uses tabs!
@@ -51,7 +51,7 @@ class BackupFile(object):
 		self.filename = name
 		self.extension = "".join([ext, ext2])
 		parts = name3.split('_')
-		match = re.search(r'(full|var(?:etc)?|full|root|nexpose(?:\-db)?|nxbackup|home)', parts[0])
+		match = re.search(r'^(full|var(?:etc)?|root|nexpose(?:\-db)?|nxbackup|home|nightlyscandata)$', parts[0])
 		if match:
 			self.backupType = parts[0]
 		else:
@@ -153,6 +153,7 @@ def main():
 
 	print("Got {0} backup files.".format(len(tarballs)))
 	deprecated = []
+	dep = {}
 	for tb in tarballs:
 		bak = BackupFile(tb)
 		# if backupDate is -1, then the file wasn't named using the expected
@@ -161,10 +162,31 @@ def main():
 		delta = datetime.now() - bak.backupDate
 		if delta.days > args.period:
 			deprecated.append(bak)
+			if not bak.host in dep.keys():
+				dep[bak.host] = []
+			dep[bak.host].append(bak)
+		
+	print("Got {0} deprecated backup files.".format(len(deprecated)))
+	#for B in deprecated:
+	#	print("\t{0}".format(B.filename))
+	sorted(dep)
+	total_disk = 0
+	for host in dep.keys(): 
+		for tar in dep[host]:
+			total_disk += tar.size
+	print("You will save {0} gigabytes when removing the below files.".format((total_disk / 1024 / 1024 / 1024)))
 	if 'show' in args.action:
-		print("Got {0} deprecated backup files.".format(len(deprecated)))
-		for B in deprecated:
-			print("\t{0}".format(B.filename))
+		for host in dep:
+			print("{0}: ".format(host))
+			for tar in dep[host]:
+				print("\t{0}".format(tar.filename))
+				print("\trm -vf {0}/{1}".format(tar.dirname, tar.filename))
+	elif 'delete' in args.action:
+		for host in dep:
+			print "{0}: ".format(host)
+			for tar in dep[host]:
+				print("Removing {0}...".format(tar.filename))
+				remove("{0}/{1}".format(tar.dirname, tar.filename))
 	else:
 		raise Exception("Unrecognized action! ({0})".format(args.action))
 
