@@ -35,7 +35,7 @@ class BackupFile(object):
 			dt = datetime(int(year), int(month), int(day), \
 				int(hour), int(mins), int(secs))
 		except ValueError, err:
-			if not len(datestr) > 8:
+			if not len(datestr) > 12:
 				return -1
 			else:
 				print("|{0}|".format(datestr))
@@ -187,6 +187,14 @@ def main():
 			for tar in dep[host]:
 				print("Removing {0}...".format(tar.filename))
 				remove("{0}/{1}".format(tar.dirname, tar.filename))
+		print("Got {0} deprecated backup files.".format(len(deprecated)))
+		for B in deprecated:
+			print("\t{0}".format(B.filename))
+	elif 'move' in args.action:
+		if args.movedir:
+			print "Move files to here: {0}:.format(args.movedir)
+		else:
+			raise Exception("You must also specify the movedir when using the 'move' action.")
 	else:
 		raise Exception("Unrecognized action! ({0})".format(args.action))
 
