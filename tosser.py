@@ -192,7 +192,7 @@ def main():
 			print("\t{0}".format(B.filename))
 	elif 'move' in args.action:
 		if args.movedir:
-			print "Move files to here: {0}:.format(args.movedir)
+			print("Move files to here: {0}:".format(args.movedir))
 		else:
 			raise Exception("You must also specify the movedir when using the 'move' action.")
 	else:
