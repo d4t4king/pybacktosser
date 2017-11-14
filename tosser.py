@@ -18,7 +18,7 @@ parser.add_argument('action', metavar='action', type=str, nargs=1,
 	help="What do you want me to do with the backups?  Valid actions are: show, delete, move, test")
 parser.add_argument('-d', '--directory', required=True, dest='startdir', \
 	help="The directory to analyze for moldy backups.")
-parser.add_argument('-p', '--period', required=False, dest='period', default=90, \
+parser.add_argument('-p', '--period', required=False, dest='period', type=int, default=90, \
 	help="The retention period for backup files.")
 args = parser.parse_args()
 
@@ -155,13 +155,18 @@ def main():
 	deprecated = []
 	for tb in tarballs:
 		bak = BackupFile(tb)
-		#print("Name: {0} Type: {1}, Perms: {2}, \n\tSize: {3}, MTime: {4}".format( \
-		#	bak.filename, bak.backupType, bak.fileMode, bak.size, bak.mtime))
-		if bak.backupDate > args.period:
+		# if backupDate is -1, then the file wasn't named using the expected
+		# convention, or something else when wrong.  Skip it for now.
+		if bak.backupDate == -1: continue
+		delta = datetime.now() - bak.backupDate
+		if delta.days > args.period:
 			deprecated.append(bak)
-
-	print("Got {0} deprecated backup files.".format(len(deprecated)))
-
+	if 'show' in args.action:
+		print("Got {0} deprecated backup files.".format(len(deprecated)))
+		for B in deprecated:
+			print("\t{0}".format(B.filename))
+	else:
+		raise Exception("Unrecognized action! ({0})".format(args.action))
 
 if __name__ == '__main__':
 	if 'test' in args.action:
